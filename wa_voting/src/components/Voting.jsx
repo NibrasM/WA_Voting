@@ -23,11 +23,16 @@ const parties = [
   },
 ];
 
-export default function Voting(logIn) {
+export default function Voting({ logIn, username }) {
   const [partiesArray, setPartiesArray] = useState(parties);
   const [selectedParty, setSelectedParty] = useState();
   const [isVoted, setIsVoted] = useState(false);
   const [cookies, setCookie] = useCookies(["loggedInUser"]);
+  const [changed, setChanged] = useState(false);
+
+  const users = JSON.parse(localStorage.getItem("users"));
+  const loggedInUser = cookies.loggedInUser;
+  const foundUser = users.find((user) => user.name === loggedInUser.name);
 
   useEffect(() => {
     const pariesData = localStorage.getItem("parties");
@@ -37,43 +42,57 @@ export default function Voting(logIn) {
       localStorage.setItem("parties", JSON.stringify(parties));
     }
 
-    const users = JSON.parse(localStorage.getItem("users"));
     const loggedInUser = cookies.loggedInUser;
     if (users && loggedInUser) {
       const foundUser = users.find((user) => user.name === loggedInUser.name);
+
       setIsVoted(foundUser.isVoted);
     }
   }, []);
 
+  // useEffect(() => {
+  //   const storedData = localStorage.getItem("users");
+  //   if (storedData) {
+  //     setUsersData(JSON.parse(storedData));
+  //   }
+  // }, []);
+
   const done = () => {
     localStorage.setItem("parties", JSON.stringify(partiesArray));
-
     const users = JSON.parse(localStorage.getItem("users"));
-    const loggedInUser = cookies.loggedInUser;
     if (users && loggedInUser) {
       const foundUser = users.find((user) => user.name === loggedInUser.name);
+
       foundUser.isVoted = true;
       localStorage.setItem("users", JSON.stringify(users));
       setIsVoted(true);
+      setChanged(false);
     }
   };
 
   const change = () => {
-    if (selectedParty) {
+    if (isVoted) {
+      setChanged(true);
+    } else if (selectedParty && !changed) {
       const partiesCopy = [...partiesArray];
       const foundParty = partiesCopy.find(
         (currentParty) => currentParty.name === selectedParty
       );
       foundParty.votes = foundParty.votes - 1;
       setPartiesArray(partiesCopy);
+      if (users && loggedInUser) {
+        const foundUser = users.find((user) => user.name === loggedInUser.name);
+        foundUser.isVoted = false;
+        localStorage.setItem("users", JSON.stringify(users));
+        setIsVoted(false);
+        setChanged(true);
+      }
     }
   };
 
-  return isVoted ? (
-    <Logout logIn={logIn}></Logout>
-  ) : (
+  return (
     <div>
-      (<label>LoggedIn username</label>
+      <label>LoggedIn {username}</label>
       {partiesArray.map((party) => {
         return (
           <PartyCard
@@ -82,11 +101,16 @@ export default function Voting(logIn) {
             parties={partiesArray}
             setParties={setPartiesArray}
             setSelectedParty={setSelectedParty}
+            disabled={isVoted || changed}
           ></PartyCard>
         );
       })}
-      <button onClick={done}>done</button>
-      <button onClick={change}>change</button>
+      <button onClick={done} disabled={isVoted}>
+        done
+      </button>
+      <button onClick={change} disabled={!isVoted}>
+        change
+      </button>
     </div>
   );
 }

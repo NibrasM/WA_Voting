@@ -3,6 +3,7 @@ export default function PartyCard({
   parties,
   setParties,
   setSelectedParty,
+  disabled,
 }) {
   const vote = () => {
     const partiesCopy = [...parties];
@@ -18,7 +19,9 @@ export default function PartyCard({
     <div>
       <p>{party.name}</p>
       <label>{party.votes}</label>
-      <button onClick={vote}>Vote</button>
+      <button onClick={vote} disabled={disabled}>
+        Vote
+      </button>
     </div>
   );
 }
